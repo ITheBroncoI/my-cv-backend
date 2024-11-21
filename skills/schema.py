@@ -9,21 +9,32 @@ class SkillType(DjangoObjectType):
         model = Skill
 
 class Query(graphene.ObjectType):
-    skill = graphene.List(SkillType, search=graphene.String())
+    skill = graphene.List(SkillType, search=graphene.String(required=False))
     skillById = graphene.Field(SkillType, idSkill=graphene.Int())
 
-    def resolve_skills(self, info, search=None, **kwargs):
+    def resolve_skill(self, info, search=None, **kwargs):
         user = info.context.user
         if user.is_anonymous:
             raise Exception('Not logged in!')
-        print(user)
 
-        if search == "*":
-            filter = Q(posted_by=user)
-            return Skill.objects.filter(filter)[:10]
-        else:
-            filter = Q(posted_by=user) & Q(Skill__iconatins=search)
-            return Skill.objects.filter(filter)
+        print("Authenticated user:", user)
+        print("Search value:", search)
+
+        # Construir el filtro base
+        filter = Q(posted_by=user)
+
+        # Caso: Si search es None o "*", devuelve los primeros 10 registros
+        if not search or search == "*":
+            skills = Skill.objects.filter(filter)[:10]
+            print("skills returned (no filter or wildcard):", skills)
+            return skills
+
+        # Caso: Filtrar por interés específico
+        filter &= Q(skill__icontains=search)
+        skills = Skill.objects.filter(filter)
+        print("Filtered skills returned:", skills)
+        return skills
+
         
     def resolve_skillById(self, info, idSkill, **kwargs):
         user = info.context.user
@@ -51,11 +62,12 @@ class CreateSkill(graphene.Mutation):
         if percent <= 0 & percent >= 0:
             raise Exception('Rango invalido para porcentaje')
         
-        user = info.context.user or None
-        print(user)
+        user = info.context.user
+        if user.is_anonymous:  # Validar si el usuario no está autenticado
+            raise Exception('Not logged in!')
 
-        currentSKill = Skill.objects.filter(id=idSkill).first()
-        print(currentSKill)
+        currentSkill = Skill.objects.filter(id=idSkill).first()
+        print(currentSkill)
 
         skill = Skill(
             skill=skill,
@@ -64,7 +76,7 @@ class CreateSkill(graphene.Mutation):
         )
 
         if currentSkill:
-            skill.id = currentSKill.id  
+            skill.id = currentSkill.id  
         
         skill.save()
 

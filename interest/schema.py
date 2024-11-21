@@ -35,7 +35,6 @@ class Query(graphene.ObjectType):
         print("Filtered interests returned:", interests)
         return interests
 
-        
     def resolve_interestById(self, info, idInterest, **kwargs):
         user = info.context.user
         if user.is_anonymous:

@@ -295,6 +295,7 @@ class InterestTestCase(GraphQLTestCase):
         assert interest.name == "Updated Interest"
         assert interest.posted_by == self.user
 
+
     def test_delete_interest_existing(self):
         # Crear un interés existente
         self.interest1 = mixer.blend(
