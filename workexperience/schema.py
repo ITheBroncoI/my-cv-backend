@@ -68,8 +68,6 @@ class CreateWorkExperience(graphene.Mutation):
             raise Exception('Not logged in!')
 
         currentWork = WorkExperience.objects.filter(id=idWork).first()
-        print(currentWork)
-
         work_experience = WorkExperience(
             position=position,
             company=company,
@@ -77,22 +75,27 @@ class CreateWorkExperience(graphene.Mutation):
             end_date=end_date,
             location=location,
             posted_by=user
-        )  
+        )
 
         if currentWork:
             work_experience.id = currentWork.id
-        
+
         work_experience.save()
 
-        archivements_objects = []
-        if archivements:
+        # Manejo de archivements
+        if archivements is not None:
+            # Eliminar logros que ya no están en la lista
+            existing_descriptions = [arch.description for arch in work_experience.archivements.all()]
+            new_descriptions = set(archivements)
+            Archivement.objects.filter(work_experience=work_experience).exclude(description__in=new_descriptions).delete()
+
+            # Agregar nuevos logros
             for description in archivements:
-                archivement = Archivement(
-                    description=description,
-                    work_experience=work_experience,
-                )
-                archivement.save()
-                archivements_objects.append(archivement)
+                if description not in existing_descriptions:
+                    Archivement.objects.create(
+                        description=description,
+                        work_experience=work_experience,
+                    )
 
         return CreateWorkExperience(
             idWork=work_experience.id,
@@ -101,74 +104,9 @@ class CreateWorkExperience(graphene.Mutation):
             start_date=work_experience.start_date,
             end_date=work_experience.end_date,
             location=work_experience.location,
-            archivements=archivements_objects,
+            archivements=work_experience.archivements.all(),
             posted_by=work_experience.posted_by
         )
-    
-class UpdateHeader(graphene.Mutation):
-    name = graphene.String()
-    actual_position = graphene.String()
-    description = graphene.String()
-    profile_picture = graphene.String()
-    email = graphene.String()
-    cellphone = graphene.String()
-    location = graphene.String()
-    github = graphene.String()
-    posted_by = graphene.Field(UserType)
-
-    class Arguments:
-        name = graphene.String()
-        actual_position = graphene.String()
-        description = graphene.String()
-        profile_picture = graphene.String()
-        email = graphene.String()
-        cellphone = graphene.String()
-        location = graphene.String()
-        github = graphene.String()
-
-    def mutate(self, info, name=None, actual_position=None, description=None, profile_picture=None, email=None, cellphone=None, location=None, github=None):
-        user = info.context.user or None
-        print(user)
-
-        if user.is_anonymous:
-            raise Exception('Not logged in!')
-
-        header = Header.objects.first()
-        if not header:
-            raise Exception('No Header exists to update.')
-
-        # Actualizar solo los campos proporcionados
-        if name:
-            header.name = name
-        if actual_position:
-            header.actual_position = actual_position
-        if description:
-            header.description = description
-        if profile_picture:
-            header.profile_picture = profile_picture
-        if email:
-            header.email = email
-        if cellphone:
-            header.cellphone = cellphone
-        if location:
-            header.location = location
-        if github:
-            header.github = github
-
-        header.save()
-
-        return UpdateHeader(
-            name=header.name,
-            actual_position=header.actual_position,
-            description=header.description,
-            profile_picture=header.profile_picture,
-            email=header.email,
-            cellphone=header.cellphone,
-            location=header.location,
-            github=header.github,
-            posted_by=header.posted_by
-        )
-
 
 class DeleteWorkExperience(graphene.Mutation):
     idWork = graphene.Int()
