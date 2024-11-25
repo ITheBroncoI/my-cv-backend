@@ -356,4 +356,5 @@ class WorkExperienceTestCase(GraphQLTestCase):
         assert 'errors' in content
         error_message = content['errors'][0]['message']
         assert error_message == "Not logged in!"
+
     

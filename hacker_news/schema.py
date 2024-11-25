@@ -11,7 +11,7 @@ import skills.schema
 import workexperience.schema
 import header.schema
 
-class Query(workexperience.schema.Query, skills.schema.Query ,language.schema.Query ,interest.schema.Query, archivements.schema.Query, education.schema.Query, users.schema.Query, links.schema.Query, graphene.ObjectType):
+class Query(header.schema.Query ,workexperience.schema.Query, skills.schema.Query ,language.schema.Query ,interest.schema.Query, archivements.schema.Query, education.schema.Query, users.schema.Query, links.schema.Query, graphene.ObjectType):
     pass
 
 class Mutation(header.schema.Mutation, workexperience.schema.Mutation, skills.schema.Mutation ,language.schema.Mutation ,interest.schema.Mutation ,archivements.schema.Mutation, education.schema.Mutation, users.schema.Mutation, links.schema.Mutation, graphene.ObjectType):

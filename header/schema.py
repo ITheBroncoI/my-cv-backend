@@ -8,6 +8,15 @@ class HeaderType(DjangoObjectType):
     class Meta:
         model = Header
 
+class Query(graphene.ObjectType):
+    get_header = graphene.Field(HeaderType)
+    
+    def resolve_get_header(self, info):
+        header = Header.objects.first()
+        if not header:
+            raise Exception("No Header exists.")
+        return header
+
 class CreateHeader(graphene.Mutation):
     name = graphene.String()
     actual_position = graphene.String()
@@ -60,7 +69,69 @@ class CreateHeader(graphene.Mutation):
             github=header.github,
             posted_by=header.posted_by
         )
-    
+
+class UpdateHeader(graphene.Mutation):
+    name = graphene.String()
+    actual_position = graphene.String()
+    description = graphene.String()
+    profile_picture = graphene.String()
+    email = graphene.String()
+    cellphone = graphene.String()
+    location = graphene.String()
+    github = graphene.String()
+
+    class Arguments:
+        name = graphene.String()
+        actual_position = graphene.String()
+        description = graphene.String()
+        profile_picture = graphene.String()
+        email = graphene.String()
+        cellphone = graphene.String()
+        location = graphene.String()
+        github = graphene.String()
+
+    def mutate(self, info, name=None, actual_position=None, description=None, profile_picture=None, email=None, cellphone=None, location=None, github=None):
+        user = info.context.user or None
+        if user.is_anonymous:
+            raise Exception("Not logged in!")
+
+        # Verificar que existe un Header para actualizar
+        header = Header.objects.first()
+        if not header:
+            raise Exception("No Header exists to update.")
+
+        # Actualizar los campos proporcionados
+        if name:
+            header.name = name
+        if actual_position:
+            header.actual_position = actual_position
+        if description:
+            header.description = description
+        if profile_picture:
+            header.profile_picture = profile_picture
+        if email:
+            header.email = email
+        if cellphone:
+            header.cellphone = cellphone
+        if location:
+            header.location = location
+        if github:
+            header.github = github
+
+        header.save()
+
+        return UpdateHeader(
+            name=header.name,
+            actual_position=header.actual_position,
+            description=header.description,
+            profile_picture=header.profile_picture,
+            email=header.email,
+            cellphone=header.cellphone,
+            location=header.location,
+            github=header.github
+        )
+
+
 class DeleteHeader(graphene.Mutation):
     message = graphene.String()
 
@@ -81,3 +152,4 @@ class DeleteHeader(graphene.Mutation):
 class Mutation(graphene.ObjectType):
     create_header = CreateHeader.Field()
     delete_header = DeleteHeader.Field()
+    update_header = UpdateHeader.Field()

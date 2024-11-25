@@ -214,3 +214,249 @@ class HeaderTestCase(GraphQLTestCase):
         """
         expected_str = self.header.name
         assert str(self.header) == expected_str
+
+    def test_update_header(self):
+        # Actualizar el Header existente
+        response = self.query(
+            '''
+            mutation UpdateHeader(
+            $name: String,
+            $actualPosition: String,
+            $description: String,
+            $profilePicture: String,
+            $email: String,
+            $cellphone: String,
+            $location: String,
+            $github: String
+            ) {
+            updateHeader(
+                name: $name,
+                actualPosition: $actualPosition,
+                description: $description,
+                profilePicture: $profilePicture,
+                email: $email,
+                cellphone: $cellphone,
+                location: $location,
+                github: $github
+            ) {
+                name
+                actualPosition
+                description
+                profilePicture
+                email
+                cellphone
+                location
+                github
+            }
+            }
+            ''',
+            variables={
+                "name": "Updated Name",
+                "actualPosition": "Updated Position",
+                "description": "Updated Description",
+                "profilePicture": "https://example.com/new_image.jpg",
+                "email": "updatedemail@example.com",
+                "cellphone": "1234567890",
+                "location": "Updated Location",
+                "github": "https://github.com/updateduser"
+            },
+            headers=self.headers
+        )
+        content = json.loads(response.content)
+
+        # Verificar que no hay errores
+        self.assertResponseNoErrors(response)
+
+        # Verificar que los datos se actualizaron correctamente
+        self.header.refresh_from_db()
+        assert self.header.name == "Updated Name"
+        assert self.header.actual_position == "Updated Position"
+        assert self.header.email == "updatedemail@example.com"
+
+
+    def test_update_header_not_logged_in(self):
+        Header.objects.all().delete()
+
+        # Crear un Header inicial
+        header = Header.objects.create(
+            name="Initial Name",
+            actual_position="Initial Position",
+            description="Initial Description",
+            profile_picture="https://example.com/image.jpg",
+            email="initial@example.com",
+            cellphone="9876543210",
+            location="Initial Location",
+            github="https://github.com/initialuser",
+            posted_by=self.user
+        )
+
+        # Actualizar el Header existente
+        response = self.query(
+            '''
+            mutation UpdateHeader(
+            $name: String,
+            $actualPosition: String,
+            $description: String,
+            $profilePicture: String,
+            $email: String,
+            $cellphone: String,
+            $location: String,
+            $github: String
+            ) {
+            updateHeader(
+                name: $name,
+                actualPosition: $actualPosition,
+                description: $description,
+                profilePicture: $profilePicture,
+                email: $email,
+                cellphone: $cellphone,
+                location: $location,
+                github: $github
+            ) {
+                name
+                actualPosition
+                description
+                profilePicture
+                email
+                cellphone
+                location
+                github
+            }
+            }
+            ''',
+            variables={
+                "name": "Updated Name",
+                "actualPosition": "Updated Position",
+                "description": "Updated Description",
+                "profilePicture": "https://example.com/new_image.jpg",
+                "email": "updatedemail@example.com",
+                "cellphone": "1234567890",
+                "location": "Updated Location",
+                "github": "https://github.com/updateduser"
+            },
+        )
+        content = json.loads(response.content)
+        print("Response when deleting without authentication:", content)
+
+        # Validar que se lanza la excepción 'Not logged in!'
+        assert 'errors' in content
+        error_message = content['errors'][0]['message']
+        assert error_message == "Not logged in!"
+
+    def test_get_header_success(self):
+        # Consulta para obtener el Header existente
+        response = self.query(
+            '''
+            query {
+                getHeader {
+                    name
+                    actualPosition
+                    description
+                    profilePicture
+                    email
+                    cellphone
+                    location
+                    github
+                    postedBy {
+                        username
+                    }
+                }
+            }
+            ''',
+            headers=self.headers 
+        )
+        content = json.loads(response.content)
+
+        # Verificar que no hay errores
+        self.assertResponseNoErrors(response)
+
+        # Verificar los datos devueltos
+        data = content["data"]["getHeader"]
+        assert data["name"] == "Test User"
+        assert data["actualPosition"] == "Software Developer"
+        assert data["description"] == "Building scalable applications."
+        assert data["profilePicture"] == "https://example.com/image.jpg"
+        assert data["email"] == "testuser@example.com"
+        assert data["cellphone"] == "1234567890"
+        assert data["location"] == "Test City"
+        assert data["github"] == "https://github.com/testuser"
+        assert data["postedBy"]["username"] == "testuser"
+
+    def test_get_header_not_exists(self):
+        # Eliminar el Header existente
+        Header.objects.all().delete()
+
+        # Intentar obtener el Header
+        response = self.query(
+            '''
+            query {
+                getHeader {
+                    name
+                    actualPosition
+                }
+            }
+            ''',
+            headers=self.headers
+        )
+        content = json.loads(response.content)
+
+        # Verificar que hay un error
+        assert "errors" in content
+        assert content["errors"][0]["message"] == "No Header exists."
+
+    def test_update_header_no_header_exists(self):
+        # Eliminar todos los Headers existentes
+        Header.objects.all().delete()
+
+        # Intentar actualizar un Header inexistente
+        response = self.query(
+            '''
+            mutation UpdateHeader(
+            $name: String,
+            $actualPosition: String,
+            $description: String,
+            $profilePicture: String,
+            $email: String,
+            $cellphone: String,
+            $location: String,
+            $github: String
+            ) {
+            updateHeader(
+                name: $name,
+                actualPosition: $actualPosition,
+                description: $description,
+                profilePicture: $profilePicture,
+                email: $email,
+                cellphone: $cellphone,
+                location: $location,
+                github: $github
+            ) {
+                name
+                actualPosition
+                description
+                profilePicture
+                email
+                cellphone
+                location
+                github
+            }
+            }
+            ''',
+            variables={
+                "name": "Updated Name",
+                "actualPosition": "Updated Position",
+                "description": "Updated Description",
+                "profilePicture": "https://example.com/new_image.jpg",
+                "email": "updatedemail@example.com",
+                "cellphone": "1234567890",
+                "location": "Updated Location",
+                "github": "https://github.com/updateduser"
+            },
+            headers=self.headers
+        )
+        content = json.loads(response.content)
+
+        # Verificar que hay un error
+        print("Response when no Header exists to update:", content)  # Depuración
+        assert "errors" in content
+        assert content["errors"][0]["message"] == "No Header exists to update."
