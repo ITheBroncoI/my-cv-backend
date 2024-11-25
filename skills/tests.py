@@ -240,6 +240,27 @@ class InterestTestCase(GraphQLTestCase):
         # Validar el mensaje específico
         assert 'Not logged in' in error_message  # Validación parcial para adaptarse a prefijos
 
+    def test_create_skill_invalid_percent(self):
+        response = self.query(
+            CREATE_OR_UPDATE_SKILL,
+            variables={
+                "idSkill": 0,  # Para crear una nueva habilidad
+                "skill": "Programming",
+                "percent": 110
+            },
+            headers=self.headers  # Usuario autenticado
+        )
+        content = json.loads(response.content)
+        print("Response for creating skill with invalid percent", content)
+
+        # Validar que existe un error
+        assert 'errors' in content
+        error_message = content['errors'][0]['message']
+        print("Error message received: -- SKILL NOT LOGGED", error_message)  # Imprime el mensaje exacto
+
+        # Validar el mensaje específico
+        assert 'Invalid range for percent' in error_message  # Validación parcial para adaptarse a prefijos
+
     def test_create_skill_with_valid_id(self):
         # Realizar la mutación para crear una habilidad con un ID específico
         response = self.query(

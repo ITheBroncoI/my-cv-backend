@@ -58,7 +58,7 @@ class CreateHeader(graphene.Mutation):
             cellphone=header.cellphone,
             location=header.location,
             github=header.github,
-            posted_by=education.posted_by
+            posted_by=header.posted_by
         )
     
 class DeleteHeader(graphene.Mutation):

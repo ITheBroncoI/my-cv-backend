@@ -14,6 +14,9 @@ class WorkExperienceType(DjangoObjectType):
     class Meta:
         model = WorkExperience
 
+    def resolve_archivements(self, info):
+        return self.archivements.all()
+
 class Query(graphene.ObjectType):
     work_experiences = graphene.List(WorkExperienceType, search=graphene.String())
     work_experienceById = graphene.Field(WorkExperienceType, idWork=graphene.Int())
@@ -25,8 +28,8 @@ class Query(graphene.ObjectType):
         print(user)
 
         if search == "*":
-            ilter = Q(posted_by=user)
-            return WorkExperienceType.objects.filter(filter)[:10]
+            filter = Q(posted_by=user)
+            return WorkExperience.objects.filter(filter)[:10]
         else:
             filter = Q(posted_by=user) & (Q(position__icontains=search) | Q(company__icontains=search))
             return WorkExperience.objects.filter(filter)
@@ -34,7 +37,7 @@ class Query(graphene.ObjectType):
     def resolve_work_experienceById(self, info, idWork, **kwargs):
         user = info.context.user  
         if user.is_anonymous:
-            raise Exception('NOt looged in!')
+            raise Exception('Not logged in!')
         print(user)
 
         filter = Q(posted_by=user) & Q(id=idWork)
@@ -60,8 +63,9 @@ class CreateWorkExperience(graphene.Mutation):
         archivements = graphene.List(graphene.String)
 
     def mutate(self, info, idWork, position, company, start_date, end_date, location, archivements=None):
-        user = info.context.user or None
-        print(user)
+        user = info.context.user
+        if user.is_anonymous:
+            raise Exception('Not logged in!')
 
         currentWork = WorkExperience.objects.filter(id=idWork).first()
         print(currentWork)
@@ -104,7 +108,7 @@ class CreateWorkExperience(graphene.Mutation):
 class DeleteWorkExperience(graphene.Mutation):
     idWork = graphene.Int()
 
-    class Argument:
+    class Arguments:
         idWork = graphene.Int()
 
     def mutate(self, info, idWork):
@@ -114,11 +118,11 @@ class DeleteWorkExperience(graphene.Mutation):
             raise Exception('Not logged in!')
         print(user)
 
-        currentWork = WorkExperience.objects.filter(idWork=idWork).first()
+        currentWork = WorkExperience.objects.filter(id=idWork).first()
         print(currentWork)
 
         if not currentWork:
-            raise Exception('INvalid WorkExperience id!')
+            raise Exception('Invalid WorkExperience id!')
         
         currentWork.delete()
 

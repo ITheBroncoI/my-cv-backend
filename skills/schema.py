@@ -59,8 +59,8 @@ class CreateSkill(graphene.Mutation):
         percent = graphene.Int()
 
     def mutate(self, info, idSkill, skill, percent):
-        if percent <= 0 & percent >= 0:
-            raise Exception('Rango invalido para porcentaje')
+        if percent < 0 or percent > 100:
+            raise Exception('Invalid range for percent')
         
         user = info.context.user
         if user.is_anonymous:  # Validar si el usuario no está autenticado

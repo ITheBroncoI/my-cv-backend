@@ -22,7 +22,7 @@ class Query(graphene.ObjectType):
             filter = Q(posted_by=user)
             return Archivements.objects.filter(filter)[:10]
         else:
-            filter = Q(posted_by=user) & Q(degree__icontains=search)
+            filter = Q(posted_by=user) & Q(archivementName__icontains=search)
             return Archivements.objects.filter(filter)
         
     def resolve_archivementsById(self, info, idArchivement, **kwargs):
@@ -38,27 +38,28 @@ class Query(graphene.ObjectType):
     
 class CreateArchivement(graphene.Mutation):
     idArchivement = graphene.Int()
-    archivement_name = graphene.String()
+    archivementName = graphene.String()
     year = graphene.Int()
     posted_by = graphene.Field(UserType)
 
     class Arguments:
         idArchivement = graphene.Int()
-        archivement_name = graphene.String()
+        archivementName = graphene.String()
         year = graphene.Int()
 
-    def mutate(self, info, idArchivement, archivement_name, year):
+    def mutate(self, info, idArchivement, archivementName, year):
         if year <= 0:
-            raise Exception('El año debe ser positivo')
+            raise Exception('The year must be positive')
         
-        user = info.context.user or None
-        print(user)
+        user = info.context.user
+        if user.is_anonymous:
+            raise Exception('Not logged in!')
 
         currentArchivement = Archivements.objects.filter(id=idArchivement).first()
         print(currentArchivement)
 
         archivement = Archivements(
-            archivement_name=archivement_name,
+            archivementName=archivementName,
             year=year,
             posted_by=user        
         )
@@ -70,7 +71,7 @@ class CreateArchivement(graphene.Mutation):
 
         return CreateArchivement(
             idArchivement=archivement.id,
-            archivement_name=archivement.archivement_name,
+            archivementName=archivement.archivementName,
             year = archivement.year,
             posted_by=archivement.posted_by
         )
@@ -102,5 +103,5 @@ class DeleteArchivement(graphene.Mutation):
 
 class Mutation(graphene.ObjectType):
     create_archivement = CreateArchivement.Field()
-    delete_mutation = DeleteArchivement.Field()
+    delete_archivement = DeleteArchivement.Field()
         
